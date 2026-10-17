@@ -314,7 +314,7 @@
 
 <script>
 /* ===== Settings ===== */
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyWScTGY5zu_GegGWF9QrW7Q_9aK3ejaU2hlVO2ev-vZoEzONs6GHP6OexVE2OYSudgJg/exec';                 // paste your Apps Script web-app URL here
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxTOHV3bvkngyJHpfmLaWfv8u5T9dF5drtfnDoRn-tbwWneENPXaU7njUFziTk2sXLF8A/exec';                 // paste your Apps Script web-app URL here
 const TEACHER_PIN = '2468';
 const MIN_SAMPLES = 20;
 const DIVISIONS = 'ABCDEFGHIJKLMNOPQ'.split('');
@@ -826,7 +826,7 @@ function tabAccuracy(rows, tested) {
 function renderTab(rows, tested) {
   if (dTab === 'main') {
     const c = countAnswers(tested);
-    $('tabBody').innerHTML = `<p class="tabsum">${tested.length} student${tested.length === 1 ? '' : 's'} tested · each model is tested on every hand sign</p><div id="chClass"></div>`;
+    $('tabBody').innerHTML = `<p class="tabsum">${tested.length} student${tested.length === 1 ? '' : 's'} tested · grouped by their model’s test accuracy</p><div id="chClass"></div>`;
     drawClass(tested); return;
   }
   const st = quizStats(rows, dTab === 'starter' ? 's' : 'p', dTab === 'starter' ? STARTER_Q : PLENARY_Q);
@@ -839,19 +839,24 @@ function renderTab(rows, tested) {
     </div>`).join('') + '</div>';
 }
 function drawClass(tested) {
-  const { ok, bad } = countAnswers(tested);
-  const tot = ok + bad, W = 1100, H = 220, m = { l: 190, r: 210 }, pw = W - m.l - m.r, bh = 56;
-  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Correct and wrong answers">`;
+  const bands = [
+    { lab: 'Working Towards', rng: '≤50%', col: '#4472C4', n: 0 },
+    { lab: 'Working At', rng: '51–70%', col: '#C0504D', n: 0 },
+    { lab: 'Working Above', rng: '≥71%', col: '#9BBB59', n: 0 }];
+  tested.forEach(r => { const a = Number(r.accuracy); bands[a <= 50 ? 0 : a <= 70 ? 1 : 2].n++; });
+  const tot = tested.length, W = 1100, H = 330, m = { l: 70, r: 30, t: 50, b: 70 }, pw = W - m.l - m.r, ph = H - m.t - m.b;
+  const Y = v => m.t + ph - v / 100 * ph, band = pw / 3, bw = Math.min(150, band * .5);
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Students by expectation level">`;
+  [0, 25, 50, 75, 100].forEach(v => { s += `<line x1="${m.l}" x2="${m.l + pw}" y1="${Y(v)}" y2="${Y(v)}" stroke="#E9EBF1" stroke-width="1"/><text x="${m.l - 10}" y="${Y(v) + 5}" text-anchor="end" font-size="15" fill="#5B6070">${v}%</text>`; });
   if (!tot) {
-    s += `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" font-size="22" fill="#5B6070">The bars appear when students finish testing</text>`;
+    s += `<text x="${m.l + pw / 2}" y="${m.t + ph / 2}" text-anchor="middle" font-size="22" fill="#5B6070">The bars appear when students finish testing</text>`;
   } else {
-    [['Correct', ok, '#5E8F1F', '✓'], ['Wrong', bad, '#E5484D', '✗']].forEach(([lab, v, col, ic], i) => {
-      const y = 30 + i * 100, w = v ? Math.max(8, v / tot * pw) : 0, pct = Math.round(v / tot * 100);
-      s += `<text x="${m.l - 18}" y="${y + bh / 2 + 9}" text-anchor="end" font-size="26" font-weight="700" fill="#1D1F2B">${ic} ${lab}</text>`;
-      s += `<rect x="${m.l}" y="${y}" width="${pw}" height="${bh}" rx="10" fill="#F1F2F6"/>`;
-      if (w) s += `<rect x="${m.l}" y="${y}" width="${w}" height="${bh}" rx="10" fill="${col}"><title>${lab}: ${v} of ${tot} answers (${pct}%)</title></rect>`;
-      s += `<text x="${m.l + pw + 18}" y="${y + bh / 2 - 2}" font-size="30" font-weight="700" fill="#1D1F2B">${pct}%</text>`;
-      s += `<text x="${m.l + pw + 18}" y="${y + bh / 2 + 22}" font-size="17" fill="#5B6070">${v} of ${tot} answers</text>`;
+    bands.forEach((b, i) => {
+      const pct = Math.round(b.n / tot * 1000) / 10, cx = m.l + band * i + band / 2, x = cx - bw / 2, y = Y(pct), h = Y(0) - y;
+      if (h > 0) s += `<path d="M${x},${Y(0)} V${y + Math.min(6, h)} a6,6 0 0 1 6,-6 H${x + bw - 6} a6,6 0 0 1 6,6 V${Y(0)} Z" fill="${b.col}"><title>${b.lab}: ${b.n} of ${tot} students (${pct}%)</title></path>`;
+      s += `<text x="${cx}" y="${y - 12}" text-anchor="middle" font-size="22" font-weight="700" fill="#1D1F2B">${pct}%  (${b.n} student${b.n === 1 ? '' : 's'})</text>`;
+      s += `<text x="${cx}" y="${Y(0) + 28}" text-anchor="middle" font-size="19" font-weight="700" fill="#1D1F2B">${b.lab}</text>`;
+      s += `<text x="${cx}" y="${Y(0) + 52}" text-anchor="middle" font-size="16" fill="#5B6070">(${b.rng})</text>`;
     });
   }
   $('chClass').innerHTML = s + '</svg>';
