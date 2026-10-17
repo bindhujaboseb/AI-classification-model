@@ -30,6 +30,8 @@
   .who{display:flex;align-items:center}
   main{max-width:1000px;margin:0 auto;padding:22px 16px 60px}
   main.wide{max-width:1400px}
+  main.mid{max-width:1240px}
+  .savebtn{white-space:nowrap}
   .card{background:#fff;border-radius:18px;padding:22px;box-shadow:0 4px 16px rgba(29,31,43,.08);margin-bottom:16px}
   h1{font-size:30px;margin:0 0 6px} h2{font-size:24px;margin:0 0 6px} h3{font-size:19px;margin:0 0 8px}
   .sub{color:var(--muted);margin:0 0 14px}
@@ -77,6 +79,31 @@
   td input[type=number]{width:90px} td select{width:100%}
   .ok-t{color:var(--limeDk);font-weight:800} .no-t{color:var(--red);font-weight:800}
   .lock{font-size:64px;text-align:center}
+  .mgrid{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+  .mgrid>*{min-width:0}
+  .camcol{position:sticky;top:76px}
+  .cam{position:relative;background:var(--dark);border-radius:14px;overflow:hidden;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;color:#A9AEC0;text-align:center}
+  .cam video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+  .cam .frame{position:absolute;inset:12% 18%;border:3px dashed rgba(164,214,94,.7);border-radius:12px;pointer-events:none}
+  .chip{display:inline-block;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:700;background:var(--line);color:var(--dark)}
+  .chip.smart{background:#eef8e0;color:var(--limeDk)} .chip.basic{background:#fff4e0;color:#9a5b00}
+  .ccard{border:2px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+  .ccard .top{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .ccard input[type=text]{width:150px;font-weight:700;padding:6px 10px}
+  .cnt{font-size:15px;color:var(--muted);margin-left:auto}
+  .pbar{height:8px;background:var(--line);border-radius:6px;overflow:hidden;margin:8px 0}
+  .pbar i{display:block;height:100%;width:0;transition:width .2s}
+  .thumbs{display:flex;gap:4px;overflow-x:auto;min-height:6px;padding-bottom:2px}
+  .thumbs canvas{width:40px;height:40px;border-radius:6px;flex:none;transform:scaleX(-1)}
+  .thumbs canvas.up{transform:none}
+  .rec{background:var(--red)!important;color:#fff!important}
+  .upl{position:relative;overflow:hidden}
+  .upl input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .preds .pr{display:grid;grid-template-columns:90px 1fr 48px;gap:8px;align-items:center;margin:8px 0;font-size:16px}
+  .preds .track{height:22px;background:var(--line);border-radius:7px;overflow:hidden}
+  .preds .fill{height:100%;transition:width .3s}
+  .preds .pr.top span:first-child{font-weight:800}
+  @media (max-width:900px){.mgrid{grid-template-columns:1fr}.camcol{position:static}}
   .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
   .stat{background:var(--light);border-radius:12px;padding:12px;text-align:center}
   .stat b{display:block;font-size:28px;color:var(--violet)}
@@ -148,8 +175,8 @@
   <section class="phase" id="p-login">
     <div class="card hero">
       <div>
-        <h1>Can AI help Dubai recycle?</h1>
-        <p class="sub">Today you will teach a computer to sort waste by looking at pictures.</p>
+        <h1>Can AI understand your hand signs?</h1>
+        <p class="sub">Today you will teach a computer to recognise hand gestures from the webcam.</p>
         <div id="resumeBox" hidden class="note ok" style="margin:0 0 14px"></div>
         <div class="row" style="align-items:flex-end">
           <div><label class="f" for="inName">Your name</label><input type="text" id="inName" maxlength="30" style="width:240px"></div>
@@ -158,7 +185,7 @@
         </div>
         <div style="margin-top:16px"><button class="btn lime" id="btnLogin">Start ▶</button></div>
       </div>
-      <div class="art">🧴 📰 🥫<br>🤖</div>
+      <div class="art">👍 👎 ✋<br>🤖</div>
     </div>
     <div style="text-align:right"><button class="btn link" id="btnTeacher">👩‍🏫 Teacher dashboard</button></div>
     <div class="card" id="teacherLogin" hidden>
@@ -173,42 +200,51 @@
   <!-- MAIN -->
   <section class="phase" id="p-main" hidden>
     <div class="note bad" id="teacherNote" hidden></div>
-    <div class="card row" style="justify-content:space-between">
-      <div><h2 style="margin:0">Train the Recycling Sorter</h2><span class="sub">Work in Teachable Machine. Record your results here.</span></div>
-      <div class="row">
-      <a class="btn lime" href="https://teachablemachine.withgoogle.com/train/image" target="_blank" rel="noopener">Open Teachable Machine ↗</a></div>
-    </div>
-
-    <div class="lvl" id="lv1">
-      <div class="hd"><div class="num">1</div><div><b>Set up &amp; collect</b><small>Create the classes · Webcam → Hold to Record · 20+ pictures each</small></div><span class="tag" id="tag1"></span></div>
-      <div class="bd">
-        <div id="classRows"></div>
-        <label class="tick"><input type="checkbox" id="ck1"> I created these classes and recorded the pictures in Teachable Machine</label>
-      </div>
-    </div>
-
-    <div class="lvl" id="lv2">
-      <div class="hd"><div class="num">2</div><div><b>Train &amp; test</b><small>Train Model → hold up each object → read the Preview</small></div><span class="tag" id="tag2"></span></div>
-      <div class="bd">
-        <label class="tick"><input type="checkbox" id="ck2"> I clicked <b>Train Model</b></label>
-        <table><thead><tr><th>Object I showed</th><th>AI's answer</th><th>Confidence %</th><th>Correct?</th></tr></thead><tbody id="resBody"></tbody></table>
-      </div>
-    </div>
-
-    <div class="lvl" id="lv3">
-      <div class="hd"><div class="num">3</div><div><b>Fool the AI</b><small>Optional · show an object the AI has never seen</small></div><span class="tag" id="tag3"></span></div>
-      <div class="bd">
-        <div class="row">
-          <div><label class="f" for="newName">New object</label><input type="text" id="newName" placeholder="e.g. Pen" maxlength="24" style="width:170px"></div>
-          <div><label class="f" for="newPred">AI's answer</label><select id="newPred"></select></div>
-          <div><label class="f" for="newConf">Confidence %</label><input type="number" id="newConf" min="0" max="100"></div>
+    <div class="note warn" id="resumeNote" hidden style="margin-bottom:12px">Pictures are not kept after the page is refreshed. Record them again if you need to train again.</div>
+    <div class="mgrid">
+      <div class="camcol">
+        <div class="card" style="padding:16px">
+          <div class="row" style="justify-content:space-between;margin-bottom:8px"><h3 style="margin:0">Camera</h3><span class="chip" id="engineChip">AI engine: loading…</span></div>
+          <div class="cam"><div id="camMsg">📷<br>Camera is off</div><video id="video" playsinline muted hidden></video><div class="frame" id="camFrame" hidden></div></div>
+          <div class="row" style="margin-top:10px"><button class="btn" id="btnCam">Start camera</button></div>
+          <div id="previewBox" hidden style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+            <div class="row" style="justify-content:space-between"><h3 style="margin:0">Preview</h3>
+              <label class="btn ghost sm upl">🖼️ Test a picture<input type="file" id="testFile" accept="image/*"></label></div>
+            <p class="sub" id="predSrc" style="margin:6px 0 0;font-size:14px"></p>
+            <div class="preds" id="preds"></div>
+            <button class="btn ghost sm" id="btnLive" hidden>↩ Back to camera</button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="card row" style="justify-content:space-between">
-      <div><b>Finished Level 2?</b> <span class="sub">Level 3 is optional.</span></div>
-      <button class="btn lime" id="btnFinish" disabled>✅ Ask teacher to check</button>
+      <div>
+        <div class="lvl" id="lv1">
+          <div class="hd"><div class="num">1</div><div><b>Collect pictures</b><small>Show each hand sign in the box · press and hold to record · 20 or more per class</small></div><span class="tag" id="tag1"></span></div>
+          <div class="bd"><div id="classes"></div><button class="btn ghost sm" id="btnAddClass">+ Add a class</button></div>
+        </div>
+
+        <div class="lvl" id="lv2">
+          <div class="hd"><div class="num">2</div><div><b>Train &amp; test</b><small>Train the model → show each hand sign → Save</small></div><span class="tag" id="tag2"></span></div>
+          <div class="bd">
+            <div class="row"><button class="btn lime" id="btnTrain">🧠 Train Model</button>
+              <div style="flex:1;min-width:140px"><div class="pbar" style="height:12px"><i id="trainBar" style="background:var(--violet)"></i></div><small id="trainMsg" class="sub"></small></div></div>
+            <table style="margin-top:12px"><thead><tr><th>Hand sign</th><th>AI's answer</th><th>Confidence</th><th>Correct?</th><th></th></tr></thead><tbody id="resBody"></tbody></table>
+          </div>
+        </div>
+
+        <div class="lvl" id="lv3">
+          <div class="hd"><div class="num">3</div><div><b>Fool the AI</b><small>Optional · show a hand sign the AI has never seen</small></div><span class="tag" id="tag3"></span></div>
+          <div class="bd">
+            <div class="row"><input type="text" id="newName" placeholder="New hand sign, e.g. Peace ✌️" maxlength="24" style="width:220px"><button class="btn sm" id="btnSaveNew">💾 Save</button></div>
+            <p id="newRes" style="margin:10px 0 0"></p>
+          </div>
+        </div>
+
+        <div class="card row" style="justify-content:space-between">
+          <div><b>Finished Level 2?</b> <span class="sub">Level 3 is optional.</span></div>
+          <button class="btn lime" id="btnFinish" disabled>✅ Ask teacher to check</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -278,7 +314,7 @@
 
 <script>
 /* ===== Settings ===== */
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwCmyEtEZZmw4ifg1H3ByUiuDnsgmNe1aDqIL6BeRynPybjfYk0LcgVupFrimQI_fMYxg/exec';                 // paste your Apps Script web-app URL here
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyWScTGY5zu_GegGWF9QrW7Q_9aK3ejaU2hlVO2ev-vZoEzONs6GHP6OexVE2OYSudgJg/exec';                 // paste your Apps Script web-app URL here
 const TEACHER_PIN = '2468';
 const MIN_SAMPLES = 20;
 const DIVISIONS = 'ABCDEFGHIJKLMNOPQ'.split('');
@@ -299,7 +335,7 @@ $('dDiv').innerHTML = '<option value="ALL">All divisions</option>' + DIVISIONS.m
 /* ===== Student state ===== */
 function freshState() {
   return { id: '', date: today(), name: '', cls: '', div: '', points: 0, phase: 'login', starter: 0, plenary: 0,
-    classes: [{ name: 'Plastic', n: '', pred: '', conf: '' }, { name: 'Paper', n: '', pred: '', conf: '' }, { name: 'Can', n: '', pred: '', conf: '' }],
+    classes: [{ name: 'Thumbs Up', n: '', pred: '', conf: '' }, { name: 'Thumbs Down', n: '', pred: '', conf: '' }, { name: 'Open Hand', n: '', pred: '', conf: '' }],
     ck1: false, ck2: false, newName: '', newPred: '', newConf: '', awarded: {},
     ans: { s: [null, null], p: [null, null] },
     joinedAt: 0, mainStart: 0, testedAt: 0, checkAt: 0, doneAt: 0, note: '' };
@@ -318,7 +354,8 @@ function signOut() {
   if (SHEET_URL && S.id) { clearTimeout(syncT); pushSync(); }
   clearInterval(pollT);
   try { localStorage.removeItem(STORE); } catch (e) { }
-  S = freshState(); $('inName').value = ''; $('resumeBox').hidden = true; $('teacherNote').hidden = true;
+  S = freshState(); SAMPLES = []; MODEL.trained = false; last = null; stopCam(); $('trainMsg').textContent = ''; $('trainBar').style.width = '0'; $('newName').value = '';
+  $('inName').value = ''; $('resumeBox').hidden = true; $('teacherNote').hidden = true;
   go('login'); toast('Signed out. Next student can log in.');
 }
 function award(key, n) { if (S.awarded[key]) return; S.awarded[key] = 1; S.points += n; renderWho(); }
@@ -349,6 +386,7 @@ function go(phase) {
   S.phase = phase;
   document.querySelectorAll('.phase').forEach(p => p.hidden = p.id !== 'p-' + phase);
   $('main').classList.toggle('wide', phase === 'teacher');
+  $('main').classList.toggle('mid', phase === 'main');
   const idx = STEPS.findIndex(s => s[0] === phase);
   $('stepper').innerHTML = idx < 0 ? (phase === 'teacher' ? '<span class="live" id="liveDot"><i></i>Teacher Dashboard</span>' : '') :
     STEPS.map((s, i) => `<span class="pill ${i === idx ? 'on' : i < idx ? 'done' : ''}">${s[1]}</span>`).join('');
@@ -364,7 +402,7 @@ function go(phase) {
 $('btnLogin').onclick = () => {
   const n = $('inName').value.trim();
   if (!n) { $('inName').focus(); shake($('inName')); return; }
-  S = freshState();
+  S = freshState(); SAMPLES = []; MODEL.trained = false; last = null;
   S.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   S.name = n; S.cls = $('inCls').value; S.div = $('inDiv').value; S.joinedAt = Date.now();
   go('starter');
@@ -386,16 +424,16 @@ const STARTER_Q = [
   { art: '🍎🍌🥕', q: 'What does "classification" mean?',
     o: ['Sorting things into groups based on their features', 'Counting how many things there are', 'Drawing a picture of something'], a: 0,
     why: 'Classification means putting things into groups by looking at their features, like shape and colour.' },
-  { art: '🧴📰🥫', q: 'A smart bin sorts waste into Plastic, Paper and Can. What are Plastic, Paper and Can called?',
+  { art: '👍👎✋', q: 'A gesture app sorts webcam pictures into Thumbs Up, Thumbs Down and Open Hand. What are Thumbs Up, Thumbs Down and Open Hand called?',
     o: ['Classes', 'Pixels', 'Passwords'], a: 0,
     why: 'Each group is called a class. An image classifier puts every picture into one of its classes.' }
 ];
 const PLENARY_Q = [
-  { art: '🖊️🤖❓', q: 'Your AI was shown a pen it had never seen. What did it do?',
+  { art: '✌️🤖❓', q: 'Your AI was shown a peace sign ✌️ it had never seen. What did it do?',
     o: ['It said "I don\'t know"', 'It picked one of the classes it learned, so it guessed wrong', 'It made a new class by itself'], a: 1,
     why: 'An AI can only choose from the classes it was taught.' },
-  { art: '📉50%', q: 'Your AI is only 50% sure about Plastic. What is the best way to improve it?',
-    o: ['Rename the class', 'Add more pictures from different angles and light, then train again', 'Move the object very fast'], a: 1,
+  { art: '📉50%', q: 'Your AI is only 50% sure about Thumbs Up. What is the best way to improve it?',
+    o: ['Rename the class', 'Add more pictures from different angles and light, then train again', 'Move your hand very fast'], a: 1,
     why: 'Better and more varied data makes a smarter, more confident AI.' }
 ];
 function runQuiz(box, qs, label, onDone, doneText) {
@@ -425,59 +463,225 @@ function runQuiz(box, qs, label, onDone, doneText) {
   draw();
 }
 
-/* ===== Main activity ===== */
+/* ===== Main activity: in-page image classifier ===== */
+const MAX_SAMPLES = 150, MAX_CLASSES = 5, CCOL = ['#6C4CE0', '#F2A93B', '#5E8F1F', '#E5484D', '#1F8FB3'];
 const cname = c => (S.classes[c] && S.classes[c].name.trim()) || ('Class ' + (c + 1));
+let SAMPLES = [];                       // {c, cv, f, th} – kept in memory only
+const MODEL = { trained: false, kind: '' };
+const count = c => SAMPLES.filter(x => x.c === c).length;
+
+/* AI engine: MobileNet (like Teachable Machine) when online, basic engine offline */
+const engine = { status: 'loading', model: null };
+function loadScript(src) { return new Promise((res, rej) => { const t = document.createElement('script'); t.src = src; t.onload = res; t.onerror = rej; document.head.appendChild(t); }); }
+function timeout(p, ms) { return Promise.race([p, new Promise((_, r) => setTimeout(() => r(new Error('timeout')), ms))]); }
+(async () => {
+  try {
+    await timeout(loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js'), 20000);
+    await timeout(loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js'), 20000);
+    engine.model = await timeout(mobilenet.load({ version: 2, alpha: 1.0 }), 40000);
+    engine.status = 'smart';
+  } catch (e) { engine.status = 'basic'; }
+  paintEngine();
+})();
+function paintEngine() {
+  const c = $('engineChip'); c.className = 'chip ' + (engine.status === 'loading' ? '' : engine.status);
+  c.textContent = engine.status === 'smart' ? 'AI engine: Smart' : engine.status === 'basic' ? 'AI engine: Basic (offline)' : 'AI engine: loading…';
+}
+const small = document.createElement('canvas'); small.width = small.height = 16;
+const sctx = small.getContext('2d', { willReadFrequently: true });
+function featuresOf(cv, kind) {
+  let v;
+  if (kind === 'smart') { const t = tf.tidy(() => engine.model.infer(cv, true)); v = Float32Array.from(t.dataSync()); t.dispose(); }
+  else {
+    sctx.drawImage(cv, 0, 0, 16, 16); const d = sctx.getImageData(0, 0, 16, 16).data;
+    v = new Float32Array(768); let k = 0;
+    for (let i = 0; i < d.length; i += 4) { v[k++] = d[i] / 255; v[k++] = d[i + 1] / 255; v[k++] = d[i + 2] / 255; }
+    let m = 0; for (const x of v) m += x; m /= v.length; for (let i = 0; i < v.length; i++) v[i] -= m;
+  }
+  let n = 0; for (const x of v) n += x * x; n = Math.sqrt(n) || 1; for (let i = 0; i < v.length; i++) v[i] /= n;
+  return v;
+}
+function classify(f) {
+  const sims = SAMPLES.map(x => { let d = 0; for (let i = 0; i < f.length; i++) d += f[i] * x.f[i]; return { c: x.c, s: d }; }).sort((a, b) => b.s - a.s);
+  const k = Math.min(9, sims.length), sc = new Array(S.classes.length).fill(0);
+  for (let i = 0; i < k; i++) sc[sims[i].c] += Math.exp(sims[i].s * 6);
+  const tot = sc.reduce((a, b) => a + b, 0) || 1, pct = sc.map(x => Math.round(x / tot * 100)), top = pct.indexOf(Math.max(...pct));
+  pct[top] += 100 - pct.reduce((a, b) => a + b, 0);
+  return { pct, top };
+}
+
+/* camera */
+const video = $('video'); let camOn = false;
+$('btnCam').onclick = async () => {
+  if (camOn) return;
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+    video.srcObject = st; await video.play(); camOn = true;
+    video.hidden = false; $('camFrame').hidden = false; $('camMsg').hidden = true; $('btnCam').textContent = 'Camera on'; $('btnCam').disabled = true;
+  } catch (e) { $('camMsg').innerHTML = '🚫<br>Camera not available.<br><small>Use the 📁 Upload buttons instead.</small>'; }
+};
+function stopCam() { try { (video.srcObject && video.srcObject.getTracks() || []).forEach(t => t.stop()); } catch (e) { } video.srcObject = null; camOn = false; video.hidden = true; $('camFrame').hidden = true; $('camMsg').hidden = false; $('camMsg').innerHTML = '📷<br>Camera is off'; $('btnCam').textContent = 'Start camera'; $('btnCam').disabled = false; }
+function grab() {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 224;
+  const w = video.videoWidth, h = video.videoHeight, m = Math.min(w, h);
+  cv.getContext('2d').drawImage(video, (w - m) / 2, (h - m) / 2, m, m, 0, 0, 224, 224); return cv;
+}
+function fromImage(img) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 224; const m = Math.min(img.width, img.height);
+  cv.getContext('2d').drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, 224, 224); cv.uploaded = true; return cv;
+}
+function loadFile(file) { return new Promise((res, rej) => { const u = URL.createObjectURL(file); const im = new Image(); im.onload = () => { res(fromImage(im)); URL.revokeObjectURL(u); }; im.onerror = rej; im.src = u; }); }
+
+/* collecting samples */
+function addSample(c, cv) {
+  if (count(c) >= MAX_SAMPLES) return false;
+  const th = document.createElement('canvas'); th.width = th.height = 64; th.getContext('2d').drawImage(cv, 0, 0, 64, 64); if (cv.uploaded) th.className = 'up';
+  SAMPLES.push({ c, cv, f: null, th });
+  const box = document.querySelector(`.thumbs[data-c="${c}"]`); if (box) box.prepend(th);
+  untrain(); return true;
+}
+function untrain() { if (MODEL.trained) { MODEL.trained = false; $('trainMsg').textContent = 'Pictures changed – train again.'; $('trainBar').style.width = '0'; } }
+function renderClasses() {
+  $('classes').innerHTML = S.classes.map((k, c) => `<div class="ccard">
+      <div class="top"><span class="dot" style="background:${CCOL[c]}"></span><input type="text" class="cname" data-c="${c}" value="${esc(k.name)}" maxlength="16" aria-label="Class name"><span class="cnt" id="cnt${c}"></span></div>
+      <div class="pbar"><i id="bar${c}" style="background:${CCOL[c]}"></i></div>
+      <div class="row" style="gap:8px"><button class="btn sm recbtn" data-c="${c}">🎥 Hold to record</button>
+        <label class="btn ghost sm upl">📁 Upload<input type="file" accept="image/*" multiple data-c="${c}" class="upfile"></label>
+        <button class="btn ghost sm clr" data-c="${c}" title="Delete pictures">🗑</button></div>
+      <div class="thumbs" data-c="${c}" style="margin-top:8px"></div></div>`).join('');
+  SAMPLES.slice().reverse().forEach(x => { const b = document.querySelector(`.thumbs[data-c="${x.c}"]`); b && b.appendChild(x.th); });
+  document.querySelectorAll('.cname').forEach(inp => inp.oninput = () => { S.classes[+inp.dataset.c].name = inp.value; renderRes(); paintPred(); update(); });
+  document.querySelectorAll('.recbtn').forEach(b => {
+    b.onpointerdown = e => { e.preventDefault(); startRec(+b.dataset.c, b); };
+    b.onkeydown = e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); startRec(+b.dataset.c, b); } };
+    b.onkeyup = e => { if (e.key === ' ' || e.key === 'Enter') stopRec(); };
+  });
+  document.querySelectorAll('.upfile').forEach(inp => inp.onchange = async () => {
+    const c = +inp.dataset.c; for (const f of inp.files) { try { if (!addSample(c, await loadFile(f))) break; } catch (e) { } }
+    inp.value = ''; update();
+  });
+  document.querySelectorAll('.clr').forEach(b => b.onclick = () => {
+    const c = +b.dataset.c; if (!count(c) || !confirm('Delete all pictures in ' + cname(c) + '?')) return;
+    SAMPLES = SAMPLES.filter(x => x.c !== c); untrain(); renderClasses(); update();
+  });
+  $('btnAddClass').disabled = S.classes.length >= MAX_CLASSES;
+}
+let recT = null, recB = null;
+function startRec(c, b) {
+  if (!camOn) { toast('Start the camera first, or use Upload.'); return; }
+  if (recT) return;
+  recB = b; b.classList.add('rec'); b.textContent = '● Recording…';
+  const tick = () => { if (!addSample(c, grab())) { stopRec(); toast('That is enough pictures for this class!'); } paintCounts(); };
+  tick(); recT = setInterval(tick, 130);
+}
+function stopRec() { if (!recT) return; clearInterval(recT); recT = null; if (recB) { recB.classList.remove('rec'); recB.textContent = '🎥 Hold to record'; } update(); }
+document.addEventListener('pointerup', stopRec); document.addEventListener('pointercancel', stopRec); window.addEventListener('blur', stopRec);
+$('btnAddClass').onclick = () => {
+  if (S.classes.length >= MAX_CLASSES) return;
+  S.classes.push({ name: 'Class ' + (S.classes.length + 1), n: '', pred: '', conf: '' }); untrain(); renderClasses(); renderRes(); update();
+};
+function paintCounts() {
+  S.classes.forEach((k, c) => {
+    const n = count(c); if (SAMPLES.length || !k.n) k.n = n;
+    const shown = SAMPLES.length ? n : (num(k.n) || 0);
+    const el = $('cnt' + c), br = $('bar' + c);
+    if (el) el.textContent = `${shown} / 20 pictures${shown >= MIN_SAMPLES ? ' ✓' : ''}`;
+    if (br) br.style.width = Math.min(100, shown / MIN_SAMPLES * 100) + '%';
+  });
+}
+
+/* training */
+$('btnTrain').onclick = async () => {
+  $('btnTrain').disabled = true;
+  if (engine.status === 'loading') {
+    $('trainMsg').textContent = 'Getting the AI engine ready…';
+    const t0 = Date.now(); while (engine.status === 'loading' && Date.now() - t0 < 10000) await new Promise(r => setTimeout(r, 250));
+    if (engine.status === 'loading') { engine.status = 'basic'; paintEngine(); }
+  }
+  const kind = engine.status === 'smart' ? 'smart' : 'basic', n = SAMPLES.length, t0 = Date.now();
+  for (let i = 0; i < n; i++) {
+    SAMPLES[i].f = featuresOf(SAMPLES[i].cv, kind);
+    if (i % 4 === 0) { $('trainBar').style.width = (i / n * 100) + '%'; $('trainMsg').textContent = `Training… ${Math.round(i / n * 100)}%`; await new Promise(r => setTimeout(r, 0)); }
+  }
+  const wait = 1500 - (Date.now() - t0); if (wait > 0) { $('trainBar').style.width = '90%'; await new Promise(r => setTimeout(r, wait)); }
+  MODEL.trained = true; MODEL.kind = kind; S.trainCount = (S.trainCount || 0) + 1;
+  $('trainBar').style.width = '100%'; $('trainMsg').textContent = '✅ Trained! Show each hand sign and click Save.';
+  update();
+};
+
+/* preview & results */
+let last = null, frozen = false, busy = false;
+setInterval(() => {
+  if (S.phase !== 'main' || !MODEL.trained || !camOn || frozen || busy || recT) return;
+  busy = true; try { last = classify(featuresOf(grab(), MODEL.kind)); paintPred('Live camera'); } catch (e) { } busy = false;
+}, 250);
+function paintPred(src) {
+  $('previewBox').hidden = !MODEL.trained;
+  if (src) $('predSrc').textContent = src;
+  $('preds').innerHTML = S.classes.map((k, c) => { const v = last && last.pct[c] !== undefined ? last.pct[c] : 0; return `<div class="pr ${last && last.top === c ? 'top' : ''}"><span>${esc(cname(c))}</span>
+    <div class="track"><div class="fill" style="width:${v}%;background:${CCOL[c]}"></div></div><span>${v}%</span></div>`; }).join('');
+}
+$('testFile').onchange = async () => {
+  const f = $('testFile').files[0]; $('testFile').value = ''; if (!f || !MODEL.trained) return;
+  try { const cv = await loadFile(f); frozen = true; last = classify(featuresOf(cv, MODEL.kind)); paintPred('Testing a picture'); $('btnLive').hidden = false; } catch (e) { toast('Could not open that picture.'); }
+};
+$('btnLive').onclick = () => { frozen = false; $('btnLive').hidden = true; };
+function renderRes() {
+  $('resBody').innerHTML = S.classes.map((k, c) => `<tr><td><span class="dot" style="background:${CCOL[c]}"></span> ${esc(cname(c))}</td>
+    <td>${k.pred === '' ? '<span class="sub">–</span>' : esc(cname(+k.pred))}</td><td>${k.pred === '' ? '' : k.conf + '%'}</td>
+    <td>${k.pred === '' ? '' : (+k.pred === c ? '<span class="ok-t">✓</span>' : '<span class="no-t">✗</span>')}</td>
+    <td><button class="btn sm savebtn" data-c="${c}">💾 Save</button></td></tr>`).join('');
+  document.querySelectorAll('.savebtn').forEach(b => b.onclick = () => {
+    if (!MODEL.trained || !last) { toast('Train the model and show the hand sign first.'); return; }
+    const c = +b.dataset.c; S.classes[c].pred = String(last.top); S.classes[c].conf = String(last.pct[last.top]);
+    renderRes(); update(); toast(`Saved: ${cname(c)} → ${cname(last.top)} ${last.pct[last.top]}%`);
+  });
+  document.querySelectorAll('.savebtn').forEach(b => b.disabled = !MODEL.trained);
+  $('newRes').innerHTML = S.newName && S.newPred !== '' ? `Saved: <b>${esc(S.newName)}</b> → AI said <b>${esc(cname(+S.newPred))}</b> (${esc(S.newConf)}%)` : '';
+}
+$('btnSaveNew').onclick = () => {
+  const n = $('newName').value.trim();
+  if (!n) { $('newName').focus(); toast('Type the name of the new hand sign.'); return; }
+  if (!MODEL.trained || !last) { toast('Train the model and show the hand sign first.'); return; }
+  S.newName = n; S.newPred = String(last.top); S.newConf = String(last.pct[last.top]); renderRes(); update();
+};
+
+/* levels */
 function levels() {
   const names = S.classes.map((k, c) => cname(c).toLowerCase());
-  const L1 = S.ck1 && new Set(names).size === names.length && S.classes.every(k => num(k.n) >= MIN_SAMPLES);
-  const L2 = L1 && S.ck2 && S.classes.every(k => k.pred !== '' && num(k.conf) >= 0 && num(k.conf) <= 100);
-  const L3 = L2 && S.newName.trim() !== '' && S.newPred !== '' && num(S.newConf) >= 0 && num(S.newConf) <= 100;
+  const L1 = new Set(names).size === names.length && S.classes.every((k, c) => (SAMPLES.length ? count(c) : num(k.n) || 0) >= MIN_SAMPLES);
+  const L2 = L1 && (S.trainCount || 0) > 0 && S.classes.every(k => k.pred !== '');
+  const L3 = L2 && S.newName.trim() !== '' && S.newPred !== '';
   return { L1, L2, L3 };
 }
-function opts(sel) { return '<option value="">– choose –</option>' + S.classes.map((k, c) => `<option value="${c}" ${String(sel) === String(c) ? 'selected' : ''}>${esc(cname(c))}</option>`).join(''); }
 function renderMain() {
   $('teacherNote').hidden = !S.note;
   if (S.note) $('teacherNote').innerHTML = '👩‍🏫 <b>Teacher says:</b> ' + esc(S.note);
-  $('classRows').innerHTML = S.classes.map((k, c) => `<div class="cls"><span class="dot" style="background:${COLORS[c]}"></span>
-    <input type="text" class="in-name" data-c="${c}" value="${esc(k.name)}" maxlength="16" style="width:170px" aria-label="Class ${c + 1} name">
-    <input type="number" class="in-n" data-c="${c}" min="0" max="999" value="${esc(k.n)}" aria-label="Pictures"> <span class="sub" style="margin:0">pictures</span></div>`).join('');
-  $('ck1').checked = S.ck1; $('ck2').checked = S.ck2;
-  $('newName').value = S.newName; $('newConf').value = S.newConf;
-  renderRes(); $('newPred').innerHTML = opts(S.newPred);
-  document.querySelectorAll('.in-name').forEach(inp => inp.oninput = () => { S.classes[+inp.dataset.c].name = inp.value; renderRes(); $('newPred').innerHTML = opts(S.newPred); update(); });
-  document.querySelectorAll('.in-n').forEach(inp => inp.oninput = () => { S.classes[+inp.dataset.c].n = inp.value; update(); });
-  update();
-}
-function renderRes() {
-  $('resBody').innerHTML = S.classes.map((k, c) => `<tr><td><span class="dot" style="background:${COLORS[c]}"></span> ${esc(cname(c))}</td>
-    <td><select class="in-pred" data-c="${c}">${opts(k.pred)}</select></td>
-    <td><input type="number" class="in-conf" data-c="${c}" min="0" max="100" value="${esc(k.conf)}"></td>
-    <td id="cor${c}"></td></tr>`).join('');
-  document.querySelectorAll('.in-pred').forEach(s => s.onchange = () => { S.classes[+s.dataset.c].pred = s.value; update(); });
-  document.querySelectorAll('.in-conf').forEach(s => s.oninput = () => { S.classes[+s.dataset.c].conf = s.value; update(); });
+  $('resumeNote').hidden = !(SAMPLES.length === 0 && S.classes.some(k => num(k.n) > 0));
+  renderClasses(); renderRes(); $('newName').value = S.newName; paintPred(''); update();
 }
 function update() {
+  paintCounts();
   const l = levels(), list = [l.L1, l.L2, l.L3], now = list.indexOf(false);
   [1, 2, 3].forEach(n => {
     const done = list[n - 1], unlocked = n === 1 || list[n - 2];
     $('lv' + n).className = 'lvl ' + (done ? 'ok' : !unlocked ? 'locked' : n - 1 === now ? 'now' : '');
     $('tag' + n).textContent = done ? 'Done ✓' : !unlocked ? '🔒 Locked' : n === 3 ? 'Optional' : 'In progress';
   });
-  S.classes.forEach((k, c) => { const td = $('cor' + c); if (td) td.innerHTML = k.pred === '' ? '' : (+k.pred === c ? '<span class="ok-t">✓</span>' : '<span class="no-t">✗</span>'); });
-  document.querySelectorAll('.in-n').forEach(inp => inp.classList.toggle('bad', inp.value !== '' && num(inp.value) < MIN_SAMPLES));
-  document.querySelectorAll('.in-conf,#newConf').forEach(inp => inp.classList.toggle('bad', inp.value !== '' && (num(inp.value) < 0 || num(inp.value) > 100)));
+  $('btnTrain').disabled = !l.L1 || recT !== null || MODEL.trained || !SAMPLES.length;
+  $('btnTrain').textContent = MODEL.trained ? '🧠 Trained' : (S.trainCount ? '🧠 Train again' : '🧠 Train Model');
+  if (!MODEL.trained && !$('trainMsg').textContent) $('trainMsg').textContent = 'Ready to train!';
+  document.querySelectorAll('.savebtn').forEach(b => b.disabled = !MODEL.trained);
+  $('btnSaveNew').disabled = !MODEL.trained;
+  $('previewBox').hidden = !MODEL.trained;
+  S.ck1 = l.L1; S.ck2 = l.L2;
   if (l.L1) award('L1', 20);
   if (l.L2) { award('L2', 30); if (!S.testedAt) S.testedAt = Date.now(); }
   if (l.L3) award('L3', 20);
   $('btnFinish').disabled = !l.L2;
   sync();
 }
-$('ck1').onchange = e => { S.ck1 = e.target.checked; update(); };
-$('ck2').onchange = e => { S.ck2 = e.target.checked; update(); };
-$('newName').oninput = e => { S.newName = e.target.value; update(); };
-$('newPred').onchange = e => { S.newPred = e.target.value; update(); };
-$('newConf').oninput = e => { S.newConf = e.target.value; update(); };
-$('btnFinish').onclick = () => { if (levels().L2) { S.note = ''; S.checkAt = Date.now(); go('check'); } };
+$('btnFinish').onclick = () => { if (levels().L2) { S.note = ''; S.checkAt = Date.now(); frozen = false; go('check'); } };
 
 /* ===== Teacher check ===== */
 function stats() {
@@ -496,7 +700,7 @@ function renderCheck() {
       <div class="stat"><b>${l.L3 ? 'Yes' : 'No'}</b>Level 3 done</div>
     </div>
     <table><thead><tr><th>Class</th><th>Pictures</th><th>AI's answer</th><th>Confidence</th><th>Correct?</th></tr></thead><tbody>
-    ${S.classes.map((k, c) => `<tr><td><span class="dot" style="background:${COLORS[c]}"></span> ${esc(cname(c))}</td><td>${esc(k.n)}</td><td>${esc(cname(+k.pred))}</td><td>${esc(k.conf)}%</td><td>${+k.pred === c ? '<span class="ok-t">✓</span>' : '<span class="no-t">✗</span>'}</td></tr>`).join('')}
+    ${S.classes.map((k, c) => `<tr><td><span class="dot" style="background:${CCOL[c]}"></span> ${esc(cname(c))}</td><td>${esc(k.n)}</td><td>${esc(cname(+k.pred))}</td><td>${esc(k.conf)}%</td><td>${+k.pred === c ? '<span class="ok-t">✓</span>' : '<span class="no-t">✗</span>'}</td></tr>`).join('')}
     ${l.L3 ? `<tr><td>${esc(S.newName)} (new)</td><td>–</td><td>${esc(cname(+S.newPred))}</td><td>${esc(S.newConf)}%</td><td>–</td></tr>` : ''}
     </tbody></table>`;
   $('pin').value = ''; $('teacherMsg').value = ''; $('pinMsg').innerHTML = '';
@@ -520,7 +724,7 @@ $('pin').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnApprove
 function renderDone() {
   const st = stats();
   $('p-done').innerHTML = `<div class="card" style="text-align:center;border:6px double var(--violet)">
-    <div style="font-size:70px">🏅</div><h1 style="color:var(--violet)">AI Recycling Engineer</h1>
+    <div style="font-size:70px">🏅</div><h1 style="color:var(--violet)">AI Gesture Engineer</h1>
     <p class="sub">This certifies that</p><div style="font-size:34px;font-weight:800">${esc(S.name)}</div>
     <p>Class ${esc(S.cls)}-${esc(S.div)} trained and tested an image classifier in Teachable Machine.</p>
     <div class="summary">
@@ -622,7 +826,7 @@ function tabAccuracy(rows, tested) {
 function renderTab(rows, tested) {
   if (dTab === 'main') {
     const c = countAnswers(tested);
-    $('tabBody').innerHTML = `<p class="tabsum">${tested.length} pair${tested.length === 1 ? '' : 's'} tested · each model is tested on every object</p><div id="chClass"></div>`;
+    $('tabBody').innerHTML = `<p class="tabsum">${tested.length} student${tested.length === 1 ? '' : 's'} tested · each model is tested on every hand sign</p><div id="chClass"></div>`;
     drawClass(tested); return;
   }
   const st = quizStats(rows, dTab === 'starter' ? 's' : 'p', dTab === 'starter' ? STARTER_Q : PLENARY_Q);
@@ -639,7 +843,7 @@ function drawClass(tested) {
   const tot = ok + bad, W = 1100, H = 220, m = { l: 190, r: 210 }, pw = W - m.l - m.r, bh = 56;
   let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Correct and wrong answers">`;
   if (!tot) {
-    s += `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" font-size="22" fill="#5B6070">The bars appear when pairs finish testing</text>`;
+    s += `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" font-size="22" fill="#5B6070">The bars appear when students finish testing</text>`;
   } else {
     [['Correct', ok, '#5E8F1F', '✓'], ['Wrong', bad, '#E5484D', '✗']].forEach(([lab, v, col, ic], i) => {
       const y = 30 + i * 100, w = v ? Math.max(8, v / tot * pw) : 0, pct = Math.round(v / tot * 100);
@@ -659,7 +863,7 @@ function demoRows() {
   const t0 = Date.now() - 16 * 60000; let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
   return names.map((n, i) => {
     const stage = i < 3 ? 'main' : i < 7 ? 'check' : i < 12 ? 'plenary' : i < 20 ? 'done' : 'main';
-    const tested = stage !== 'main', res = ['Plastic', 'Paper', 'Can'].map((c, k) => ({ c, ok: rnd() > (k === 2 ? .38 : .12) }));
+    const tested = stage !== 'main', res = ['Thumbs Up', 'Thumbs Down', 'Open Hand'].map((c, k) => ({ c, ok: rnd() > (k === 2 ? .38 : .12) }));
     const acc = Math.round(res.filter(x => x.ok).length / 3 * 100);
     return { id: 'd' + i, name: n, cls: 'VIII', div: 'C', stage, points: 60 + Math.round(rnd() * 70), starter: rnd() > .2 ? 2 : 1, pics: 60 + Math.round(rnd() * 40),
       accuracy: tested ? acc : null, avgConf: tested ? 70 + Math.round(rnd() * 28) : '', plenary: stage === 'done' ? (rnd() > .25 ? 2 : 1) : '', approved: ['plenary', 'done'].includes(stage) ? 'YES' : '',
@@ -668,7 +872,7 @@ function demoRows() {
   });
 }
 
-window.addEventListener('beforeunload', () => save());
+window.addEventListener('beforeunload', e => { save(); if (SAMPLES.length && S.phase === 'main') { e.preventDefault(); e.returnValue = ''; } });
 go('login');
 </script>
 </body>
