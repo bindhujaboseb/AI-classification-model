@@ -248,6 +248,21 @@
     </div>
   </section>
 
+  <!-- WAIT FOR TEACHER TO START MAIN ACTIVITY -->
+  <section class="phase" id="p-gate" hidden>
+    <div class="card" style="text-align:center">
+      <div class="lock">✋</div>
+      <h2>Well done! Starter complete.</h2>
+      <p class="sub" id="gateScore"></p>
+      <p style="font-size:19px"><span class="wait"></span> Please wait – your teacher will start the <b>Main Activity</b>.</p>
+      <div class="card noprint" style="background:var(--light);box-shadow:none;margin:16px auto 0;max-width:560px;text-align:left">
+        <h3>For the teacher</h3>
+        <div class="row"><input type="password" id="gpin" placeholder="Teacher PIN" maxlength="8" style="width:160px" autocomplete="off"><button class="btn lime" id="btnGate">▶ Start Main Activity</button></div>
+        <div id="gpinMsg"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- TEACHER CHECK -->
   <section class="phase" id="p-check" hidden>
     <div class="card">
@@ -300,6 +315,11 @@
     </div>
 
     <div class="panel">
+      <div class="row" style="justify-content:space-between"><h3>Waiting to start Main Activity</h3><button class="btn lime sm" id="btnStartAll" disabled>Start all</button></div>
+      <div class="wlist" id="gateList"></div>
+    </div>
+
+    <div class="panel">
       <div class="row" style="justify-content:space-between"><h3>Waiting for check</h3><button class="btn lime sm" id="btnApproveAll" disabled>Approve all</button></div>
       <div class="wlist" id="waitList"></div>
     </div>
@@ -314,7 +334,7 @@
 
 <script>
 /* ===== Settings ===== */
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxTOHV3bvkngyJHpfmLaWfv8u5T9dF5drtfnDoRn-tbwWneENPXaU7njUFziTk2sXLF8A/exec';                 // paste your Apps Script web-app URL here
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzIFa4FGqRmxrANQM4bieYOK-R1JGUu_7iY3RvFlJKuul-XTdwKdfyZJgpXDf59jRgl5g/exec';                 // paste your Apps Script web-app URL here
 const TEACHER_PIN = '2468';
 const MIN_SAMPLES = 20;
 const DIVISIONS = 'ABCDEFGHIJKLMNOPQ'.split('');
@@ -380,7 +400,7 @@ function pushSync() {
 }
 
 /* ===== Phases ===== */
-const STEPS = [['starter', 'Starter'], ['main', 'Main Activity'], ['check', 'Teacher Check'], ['plenary', 'Plenary'], ['done', 'Done']];
+const STEPS = [['starter', 'Starter'], ['gate', 'Teacher Approval'], ['main', 'Main Activity'], ['check', 'Teacher Check'], ['plenary', 'Plenary'], ['done', 'Done']];
 let pollT = null;
 function go(phase) {
   S.phase = phase;
@@ -392,9 +412,10 @@ function go(phase) {
     STEPS.map((s, i) => `<span class="pill ${i === idx ? 'on' : i < idx ? 'done' : ''}">${s[1]}</span>`).join('');
   renderWho(); window.scrollTo(0, 0);
   clearInterval(pollT);
-  if (phase === 'starter') runQuiz($('p-starter'), STARTER_Q, 'Starter', sc => { S.starter = sc; go('main'); }, 'Start Main Activity ▶');
+  if (phase === 'starter') runQuiz($('p-starter'), STARTER_Q, 'Starter', sc => { S.starter = sc; go('gate'); }, 'Finish Starter ▶');
+  if (phase === 'gate') { $('gateScore').textContent = `Your starter score: ${S.starter}/2 · ⭐ ${S.points} points`; $('gpin').value = ''; $('gpinMsg').innerHTML = ''; startPoll('gate'); }
   if (phase === 'main') { if (!S.mainStart) S.mainStart = Date.now(); renderMain(); }
-  if (phase === 'check') { if (!S.checkAt) S.checkAt = Date.now(); renderCheck(); startPoll(); }
+  if (phase === 'check') { if (!S.checkAt) S.checkAt = Date.now(); renderCheck(); startPoll('check'); }
   if (phase === 'plenary') runQuiz($('p-plenary'), PLENARY_Q, 'Plenary', sc => { S.plenary = sc; S.doneAt = Date.now(); go('done'); }, 'See my results ▶');
   if (phase === 'done') renderDone();
   if (phase !== 'teacher' && phase !== 'login') sync(true);
@@ -705,10 +726,14 @@ function renderCheck() {
     </tbody></table>`;
   $('pin').value = ''; $('teacherMsg').value = ''; $('pinMsg').innerHTML = '';
 }
-function startPoll() {
+function startPoll(kind) {
   if (!SHEET_URL) return;
   const check = () => fetch(`${SHEET_URL}?action=status&id=${encodeURIComponent(S.id)}`).then(r => r.json())
-    .then(d => { if (d && d.approved && S.phase === 'check') { toast('✔ Approved by your teacher!'); go('plenary'); } }).catch(() => { });
+    .then(d => {
+      if (!d) return;
+      if (kind === 'gate' && S.phase === 'gate' && (d.value === 'MAIN' || d.approved)) { toast('▶ Your teacher started the Main Activity!'); go('main'); }
+      if (kind === 'check' && S.phase === 'check' && d.approved) { toast('✔ Approved by your teacher!'); go('plenary'); }
+    }).catch(() => { });
   pollT = setInterval(check, 5000); check();
 }
 function pinOk(inp, msg) {
@@ -719,6 +744,8 @@ function pinOk(inp, msg) {
 $('btnApprove').onclick = () => { if (pinOk($('pin'), $('pinMsg'))) go('plenary'); };
 $('btnBack').onclick = () => { if (!pinOk($('pin'), $('pinMsg'))) return; S.note = $('teacherMsg').value.trim() || 'Please improve your model and try again.'; go('main'); };
 $('pin').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnApprove').click(); });
+$('btnGate').onclick = () => { if (pinOk($('gpin'), $('gpinMsg'))) go('main'); };
+$('gpin').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnGate').click(); });
 
 /* ===== Done ===== */
 function renderDone() {
@@ -777,22 +804,27 @@ function paintDash() {
   $('kJoin').textContent = rows.length;
   $('kTest').innerHTML = `${tested.length}<small> / ${rows.length}</small>`;
   $('kDone').innerHTML = `${rows.filter(r => r.stage === 'done').length}<small> / ${rows.length}</small>`;
+  const gating = rows.filter(r => r.stage === 'gate' && r.approved !== 'MAIN' && r.approved !== 'YES');
+  $('gateList').innerHTML = gating.length ? gating.map(r => `<span class="wchip">${esc(r.name)} · starter ${esc(r.starter)}/2 <button data-id="${esc(r.id)}">Start</button></span>`).join('') : '<span class="sub" style="margin:0">Nobody is waiting.</span>';
+  $('gateList').querySelectorAll('button').forEach(b => b.onclick = () => approve([b.dataset.id], 'MAIN'));
+  $('btnStartAll').disabled = !gating.length;
+  $('btnStartAll').onclick = () => approve(gating.map(r => r.id), 'MAIN');
   const waiting = rows.filter(r => r.stage === 'check' && r.approved !== 'YES');
   $('waitList').innerHTML = waiting.length ? waiting.map(r => `<span class="wchip">${esc(r.name)} · ${r.accuracy ?? '–'}% <button data-id="${esc(r.id)}">Approve</button></span>`).join('') : '<span class="sub" style="margin:0">Nobody is waiting.</span>';
-  $('waitList').querySelectorAll('button').forEach(b => b.onclick = () => approve([b.dataset.id]));
+  $('waitList').querySelectorAll('button').forEach(b => b.onclick = () => approve([b.dataset.id], 'YES'));
   $('btnApproveAll').disabled = !waiting.length;
-  $('btnApproveAll').onclick = () => approve(waiting.map(r => r.id));
-  const stageName = { starter: 'Starter', main: 'Main activity', check: 'Waiting for check', plenary: 'Plenary', done: 'Completed' };
+  $('btnApproveAll').onclick = () => approve(waiting.map(r => r.id), 'YES');
+  const stageName = { starter: 'Starter', gate: 'Waiting to start', main: 'Main activity', check: 'Waiting for check', plenary: 'Plenary', done: 'Completed' };
   $('dTable').innerHTML = rows.slice().sort((a, b) => String(a.name).localeCompare(String(b.name))).map(r => `<tr><td>${esc(r.name)}</td><td>${esc(r.div)}</td><td>${stageName[r.stage] || esc(r.stage)}</td><td>${esc(r.pics)}</td><td>${r.accuracy === null || r.accuracy === '' ? '–' : r.accuracy + '%'}</td><td>${esc(r.starter)}/2</td><td>${r.plenary === '' || r.plenary == null ? '–' : r.plenary + '/2'}</td><td>${esc(r.points)}</td></tr>`).join('') || '<tr><td colspan="8" class="sub">No students yet.</td></tr>';
   renderTab(rows, tested);
 }
-function approve(ids) {
+function approve(ids, value) {
   if (!ids.length) return;
-  dRows.forEach(r => { if (ids.includes(r.id)) r.approved = 'YES'; });
-  if (demo) { dRows.forEach(r => { if (ids.includes(r.id)) r.stage = 'plenary'; }); paintDash(); return; }
+  dRows.forEach(r => { if (ids.includes(r.id)) r.approved = value; });
+  if (demo) { dRows.forEach(r => { if (ids.includes(r.id)) r.stage = value === 'MAIN' ? 'main' : 'plenary'; }); paintDash(); return; }
   paintDash();
-  fetch(SHEET_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'approve', ids }) })
-    .then(() => toast(`Approved ${ids.length} student${ids.length > 1 ? 's' : ''}`)).catch(() => toast('Could not reach Google Sheets'));
+  fetch(SHEET_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'approve', ids, value }) })
+    .then(() => toast(value === 'MAIN' ? `Started Main Activity for ${ids.length} student${ids.length > 1 ? 's' : ''}` : `Approved ${ids.length} student${ids.length > 1 ? 's' : ''}`)).catch(() => toast('Could not reach Google Sheets'));
 }
 
 /* --- results by activity (Curipod-style) --- */
@@ -867,8 +899,8 @@ function demoRows() {
   const names = ['Aisha', 'Rahul', 'Fatima', 'Arjun', 'Maryam', 'Dev', 'Sara', 'Omar', 'Diya', 'Yusuf', 'Ananya', 'Zaid', 'Riya', 'Hamdan', 'Meera', 'Ali', 'Nisha', 'Karan', 'Layla', 'Vihaan', 'Noor', 'Adam', 'Isha', 'Rayan'];
   const t0 = Date.now() - 16 * 60000; let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
   return names.map((n, i) => {
-    const stage = i < 3 ? 'main' : i < 7 ? 'check' : i < 12 ? 'plenary' : i < 20 ? 'done' : 'main';
-    const tested = stage !== 'main', res = ['Thumbs Up', 'Thumbs Down', 'Open Hand'].map((c, k) => ({ c, ok: rnd() > (k === 2 ? .38 : .12) }));
+    const stage = i < 3 ? 'gate' : i < 7 ? 'check' : i < 12 ? 'plenary' : i < 20 ? 'done' : 'main';
+    const tested = !['main', 'gate'].includes(stage), res = ['Thumbs Up', 'Thumbs Down', 'Open Hand'].map((c, k) => ({ c, ok: rnd() > (k === 2 ? .38 : .12) }));
     const acc = Math.round(res.filter(x => x.ok).length / 3 * 100);
     return { id: 'd' + i, name: n, cls: 'VIII', div: 'C', stage, points: 60 + Math.round(rnd() * 70), starter: rnd() > .2 ? 2 : 1, pics: 60 + Math.round(rnd() * 40),
       accuracy: tested ? acc : null, avgConf: tested ? 70 + Math.round(rnd() * 28) : '', plenary: stage === 'done' ? (rnd() > .25 ? 2 : 1) : '', approved: ['plenary', 'done'].includes(stage) ? 'YES' : '',
