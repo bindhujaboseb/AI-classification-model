@@ -7,7 +7,9 @@
 <!--
   TEACHER SETTINGS (see the setup steps in Google_Sheet_Script.gs)
   1. SHEET_URL  – paste your Google Apps Script web-app URL (ends with /exec).
-  2. TEACHER_PIN – opens the Teacher Dashboard and approves students.
+  2. TEACHER_PIN – opens the Teacher Dashboard (2468).
+     MAIN_PIN – student screen: start the Main Activity (1357).
+     PLENARY_PIN – student screen: teacher check, continue to the Plenary (8642).
 -->
 <style>
   :root{--dark:#1D1F2B;--dark2:#2C3042;--lime:#A4D65E;--limeDk:#5E8F1F;--violet:#6C4CE0;--violetLt:#ECE8FD;--amber:#F2A93B;--light:#F7F8FB;--muted:#5B6070;--red:#E5484D;--line:#E1E3EA;--grid:#E9EBF1}
@@ -360,8 +362,10 @@
 
 <script>
 /* ===== Settings ===== */
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbweG55A865xHCIQstiPAGsRJrS2IsGHjUjaeNcutE41qdGVmYWdrmZ22OtyD5YPOnpVCw/exec';                 // paste your Apps Script web-app URL here
-const TEACHER_PIN = '2468';
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbz9kJbqf5eJkQ1dqDpmbsqVNBIg8IPJMurqtEv_F3DRL4xIuo4r2OhXgDsBXw5NNkfiSg/exec';                 // paste your Apps Script web-app URL here
+const TEACHER_PIN = '2468';          // opens the Teacher Dashboard
+const MAIN_PIN = '1357';             // lets a student start the Main Activity
+const PLENARY_PIN = '8642';          // teacher check: lets a student continue to the Plenary
 const MIN_SAMPLES = 20;
 const DIVISIONS = 'ABCDEFGHIJKLMNOPQ'.split('');
 const COLORS = ['#6C4CE0', '#F2A93B', '#5E8F1F'];
@@ -784,15 +788,15 @@ function startPoll(kind) {
   };
   pollT = setInterval(check, 4000); setTimeout(check, 1500);
 }
-function pinOk(inp, msg) {
-  if (inp.value === TEACHER_PIN) return true;
+function pinOk(inp, msg, pin = TEACHER_PIN) {
+  if (inp.value === pin) return true;
   msg.innerHTML = '<div class="note bad">Wrong PIN. Only the teacher can do this.</div>';
   shake(inp); inp.value = ''; return false;
 }
-$('btnApprove').onclick = () => { if (pinOk($('pin'), $('pinMsg'))) go('plenary'); };
-$('btnBack').onclick = () => { if (!pinOk($('pin'), $('pinMsg'))) return; S.note = $('teacherMsg').value.trim() || 'Please improve your model and try again.'; go('main'); };
+$('btnApprove').onclick = () => { if (pinOk($('pin'), $('pinMsg'), PLENARY_PIN)) go('plenary'); };
+$('btnBack').onclick = () => { if (!pinOk($('pin'), $('pinMsg'), PLENARY_PIN)) return; S.note = $('teacherMsg').value.trim() || 'Please improve your model and try again.'; go('main'); };
 $('pin').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnApprove').click(); });
-$('btnGate').onclick = () => { if (pinOk($('gpin'), $('gpinMsg'))) go('main'); };
+$('btnGate').onclick = () => { if (pinOk($('gpin'), $('gpinMsg'), MAIN_PIN)) go('main'); };
 $('gpin').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnGate').click(); });
 
 /* ===== Done ===== */
