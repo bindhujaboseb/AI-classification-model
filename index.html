@@ -263,9 +263,7 @@
       <h2>Well done! Starter complete.</h2>
       <p class="sub" id="gateScore"></p>
       <div class="losc">
-        <div class="box"><h3>🎯 Learning Objectives</h3><ul>
-          <li>The students will be able to explain image classification and how AI uses it in real life.</li>
-          <li>The students will be able to build and test an image classifier by collecting pictures, training and testing a model.</li></ul></div>
+        <div class="box"><h3>🎯 Learning Objective</h3><p style="margin:0;font-size:17px">The students will be able to explain image classification and build and test an image classifier that recognises hand gestures.</p></div>
         <div class="box sc"><h3>✅ Success Criteria</h3><ul>
           <li>I will be able to explain classification as sorting pictures into classes.</li>
           <li>I will be able to collect 20+ pictures per class and train the model.</li>
@@ -354,7 +352,7 @@
 
     <div class="panel">
       <details class="all"><summary>All students</summary>
-        <div class="stbl"><table><thead><tr><th>Name</th><th>Div</th><th>Stage</th><th>Pictures</th><th>Accuracy</th><th>Starter</th><th>Plenary</th><th>Points</th></tr></thead><tbody id="dTable"></tbody></table></div>
+        <div class="stbl"><table><thead><tr><th>Name</th><th>Div</th><th>Status</th><th>Starter</th><th>Main Activity</th><th>Level</th><th>Plenary</th><th>Points</th></tr></thead><tbody id="dTable"></tbody></table></div>
       </details>
     </div>
   </section>
@@ -362,7 +360,7 @@
 
 <script>
 /* ===== Settings ===== */
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzIFa4FGqRmxrANQM4bieYOK-R1JGUu_7iY3RvFlJKuul-XTdwKdfyZJgpXDf59jRgl5g/exec';                 // paste your Apps Script web-app URL here
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbweG55A865xHCIQstiPAGsRJrS2IsGHjUjaeNcutE41qdGVmYWdrmZ22OtyD5YPOnpVCw/exec';                 // paste your Apps Script web-app URL here
 const TEACHER_PIN = '2468';
 const MIN_SAMPLES = 20;
 const DIVISIONS = 'ABCDEFGHIJKLMNOPQ'.split('');
@@ -400,6 +398,7 @@ function renderWho() {
 function signOut() {
   if (!confirm('Sign out ' + S.name + '? Your work so far is saved.')) return;
   if (SHEET_URL && S.id) { clearTimeout(syncT); pushSync(); }
+  lastSent = '';
   clearInterval(pollT);
   try { localStorage.removeItem(STORE); } catch (e) { }
   S = freshState(); SAMPLES = []; MODEL.trained = false; last = null; stopCam(); $('trainMsg').textContent = ''; $('trainBar').style.width = '0'; $('newName').value = '';
@@ -409,22 +408,34 @@ function signOut() {
 function award(key, n) { if (S.awarded[key]) return; S.awarded[key] = 1; S.points += n; renderWho(); }
 
 /* ===== Google Sheet sync ===== */
-let cloudTxt = '', syncT = null;
+let cloudTxt = '', syncT = null, syncBusy = false, syncAgain = false, lastSent = '', syncFails = 0;
 function setCloud(t) { cloudTxt = t; const c = $('cloud'); if (c) c.textContent = t; }
+const STATUS_NAME = { starter: 'Starter', gate: 'Waiting to start', main: 'Main activity', check: 'Waiting for check', plenary: 'Plenary', hots: 'HOT question', done: 'Completed' };
+function levelOf(a) { a = Number(a); return a <= 50 ? 'Working Towards' : a <= 70 ? 'Working At' : 'Working Above'; }
 function snapshot() {
-  const st = stats();
-  return { action: 'save', id: S.id, date: S.date, name: S.name, cls: S.cls, div: S.div, stage: S.phase, points: S.points,
-    starter: S.starter, pics: st.pics, results: S.classes.map((k, c) => k.pred === '' ? '' : `${cname(c)}→${cname(+k.pred)} ${k.conf}%`).filter(Boolean).join('; '),
-    accuracy: S.testedAt ? st.acc : '', avgConf: S.testedAt ? st.conf : '', newObj: S.newName && S.newPred !== '' ? `${S.newName}→${cname(+S.newPred)} ${S.newConf}%` : '',
-    plenary: ['hots', 'done'].includes(S.phase) ? S.plenary : '', joinedAt: S.joinedAt, testedAt: S.testedAt || '', checkAt: S.checkAt || '', doneAt: S.doneAt || '', updated: Date.now(),
-    resultsJson: JSON.stringify({ res: S.testedAt ? S.classes.map((k, c) => ({ c: cname(c), ok: +k.pred === c })) : [], s: S.ans.s, p: S.ans.p, h: S.hots || '' }) };
+  const st = stats(), tested = !!S.testedAt, after = ['plenary', 'hots', 'done'].includes(S.phase), fin = ['hots', 'done'].includes(S.phase);
+  return { id: S.id, date: S.date, name: S.name, cls: S.cls, div: S.div, stage: S.phase, status: STATUS_NAME[S.phase] || S.phase,
+    starter: S.phase === 'starter' ? '' : S.starter, accuracy: tested ? st.acc : '', level: tested ? levelOf(st.acc) : '',
+    plenary: fin ? S.plenary : '', hots: S.phase === 'done' ? (S.hots || '') : '', points: S.points,
+    joinedAt: S.joinedAt, testedAt: S.testedAt || '',
+    resultsJson: JSON.stringify({ res: tested ? S.classes.map((k, c) => ({ c: cname(c), ok: +k.pred === c })) : [], s: S.ans.s, p: S.ans.p }) };
 }
-function sync(now) { save(); if (!SHEET_URL || !S.id) return; clearTimeout(syncT); syncT = setTimeout(pushSync, now ? 0 : 1500); }
+function sync(now) { save(); if (!SHEET_URL || !S.id) return; clearTimeout(syncT); syncT = setTimeout(pushSync, now ? 0 : 2000); }
 function pushSync() {
-  setCloud('☁ Saving…');
-  fetch(SHEET_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(snapshot()) })
-    .then(() => setCloud('☁ Saved ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })))
-    .catch(() => { setCloud('⚠ Not saved – retrying'); setTimeout(pushSync, 8000); });
+  if (!SHEET_URL || !S.id) return;
+  if (syncBusy) { syncAgain = true; return; }
+  const body = JSON.stringify(snapshot());
+  if (body === lastSent) return;
+  syncBusy = true; setCloud('☁ Saving…');
+  fetch(SHEET_URL, { method: 'POST', body })
+    .then(r => r.json())
+    .then(d => {
+      if (!d || !d.ok) throw new Error((d && d.error) || 'not saved');
+      lastSent = body; syncFails = 0;
+      setCloud('☁ Saved ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    })
+    .catch(() => { syncFails++; setCloud('⚠ Not saved – retrying'); clearTimeout(syncT); syncT = setTimeout(pushSync, Math.min(15000, 3000 * syncFails) + Math.random() * 2000); })
+    .finally(() => { syncBusy = false; if (syncAgain) { syncAgain = false; pushSync(); } });
 }
 
 /* ===== Phases ===== */
@@ -760,13 +771,18 @@ function renderCheck() {
 }
 function startPoll(kind) {
   if (!SHEET_URL) return;
-  const check = () => fetch(`${SHEET_URL}?action=status&id=${encodeURIComponent(S.id)}`).then(r => r.json())
+  let busy = false;
+  const check = () => {
+    if (busy) return; busy = true;
+    if (lastSent === '') pushSync();   // make sure the teacher can see this student
+    fetch(`${SHEET_URL}?action=status&id=${encodeURIComponent(S.id)}&date=${S.date}&cls=${encodeURIComponent(S.cls)}&div=${encodeURIComponent(S.div)}`).then(r => r.json())
     .then(d => {
       if (!d) return;
       if (kind === 'gate' && S.phase === 'gate' && (d.value === 'MAIN' || d.approved)) { toast('▶ Your teacher started the Main Activity!'); go('main'); }
       if (kind === 'check' && S.phase === 'check' && d.approved) { toast('✔ Approved by your teacher!'); go('plenary'); }
-    }).catch(() => { });
-  pollT = setInterval(check, 5000); check();
+    }).catch(() => { }).finally(() => { busy = false; });
+  };
+  pollT = setInterval(check, 4000); setTimeout(check, 1500);
 }
 function pinOk(inp, msg) {
   if (inp.value === TEACHER_PIN) return true;
@@ -803,29 +819,48 @@ function renderDone() {
 $('btnTeacher').onclick = () => { $('teacherLogin').hidden = !$('teacherLogin').hidden; if (!$('teacherLogin').hidden) $('tpin').focus(); };
 $('btnTpin').onclick = () => { if (pinOk($('tpin'), $('tpinMsg'))) { $('tpin').value = ''; openDash(); } };
 $('tpin').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnTpin').click(); });
-$('btnExit').onclick = () => { clearInterval(dPoll); demo = false; dRows = []; S = freshState(); go('login'); toast('Teacher signed out.'); };
+$('btnExit').onclick = () => { clearInterval(dPoll); dSig = ''; demo = false; dRows = []; S = freshState(); go('login'); toast('Teacher signed out.'); };
 if (location.hash === '#teacher') { $('teacherLogin').hidden = false; }
 
-let dPoll = null, dRows = [], demo = false;
+let dPoll = null, dRows = [], demo = false, dBusy = false, dSig = '', dReq = 0;
+const pendingApr = {};   // approvals sent but not yet visible in the sheet
 function openDash() {
   S = freshState(); go('teacher');
   try { const p = JSON.parse(localStorage.getItem(STORE + '_dash') || '{}'); if (p.cls) $('dCls').value = p.cls; if (p.div) $('dDiv').value = p.div; } catch (e) { }
   $('btnDemo').hidden = !!SHEET_URL;
   if (!SHEET_URL) $('dStatus').textContent = 'Not connected to Google Sheets (SHEET_URL is empty).';
-  refresh(); clearInterval(dPoll); dPoll = setInterval(refresh, 5000);
+  dSig = ''; refresh(); clearInterval(dPoll); dPoll = setInterval(refresh, 4000);
 }
-[$('dCls'), $('dDiv')].forEach(s => s.onchange = () => { try { localStorage.setItem(STORE + '_dash', JSON.stringify({ cls: $('dCls').value, div: $('dDiv').value })); } catch (e) { } refresh(); });
+[$('dCls'), $('dDiv')].forEach(s => s.onchange = () => { try { localStorage.setItem(STORE + '_dash', JSON.stringify({ cls: $('dCls').value, div: $('dDiv').value })); } catch (e) { } dSig = ''; dRows = []; dBusy = false; refresh(); });
 $('btnDemo').onclick = () => { demo = true; dRows = demoRows(); paintDash(); $('dStatus').textContent = 'Showing demo data'; };
+function cleanRows(raw) {
+  // one row per student: if a student logged in twice, keep the latest entry
+  const by = {};
+  raw.forEach(r => {
+    r.accuracy = r.accuracy === '' || r.accuracy == null ? null : Number(r.accuracy);
+    const p = pendingApr[r.id];
+    if (p) { if (r.approved === p.v || Date.now() - p.t > 30000) delete pendingApr[r.id]; else r.approved = p.v; }
+    const k = [String(r.name).trim().toLowerCase().replace(/\s+/g, ' '), r.cls, r.div].join('|');
+    if (!by[k] || Number(r.joinedAt) > Number(by[k].joinedAt)) by[k] = r;
+  });
+  return Object.values(by);
+}
 function refresh() {
   if (S.phase !== 'teacher') return;
   if (demo || !SHEET_URL) { paintDash(); return; }
-  const q = `${SHEET_URL}?action=list&date=${today()}&cls=${encodeURIComponent($('dCls').value)}&div=${encodeURIComponent($('dDiv').value)}`;
+  if (dBusy) return;
+  dBusy = true;
+  const req = ++dReq, cls = $('dCls').value, div = $('dDiv').value;
+  const q = `${SHEET_URL}?action=list&date=${today()}&cls=${encodeURIComponent(cls)}&div=${encodeURIComponent(div)}&_=${Date.now()}`;
   fetch(q).then(r => r.json()).then(d => {
-    dRows = (d.rows || []).map(r => Object.assign(r, { accuracy: r.accuracy === '' ? null : Number(r.accuracy) }));
-    $('dStatus').textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if (req !== dReq || S.phase !== 'teacher') return;
+    const raw = d.rows || [], sig = JSON.stringify(raw) + JSON.stringify(pendingApr);
+    $('dStatus').textContent = 'Live · updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const l = $('liveDot'); if (l) l.className = 'live on';
-    paintDash();
-  }).catch(() => { const l = $('liveDot'); if (l) l.className = 'live err'; $('dStatus').textContent = 'Cannot reach Google Sheets – retrying…'; });
+    if (sig === dSig) return;          // nothing changed – no redraw
+    dSig = sig; dRows = cleanRows(raw); paintDash();
+  }).catch(() => { const l = $('liveDot'); if (l) l.className = 'live err'; $('dStatus').textContent = 'Cannot reach Google Sheets – retrying…'; })
+    .finally(() => { dBusy = false; });
 }
 function paintDash() {
   const rows = dRows, tested = rows.filter(r => r.accuracy !== null && r.accuracy !== '' && r.testedAt);
@@ -846,17 +881,22 @@ function paintDash() {
   $('waitList').querySelectorAll('button').forEach(b => b.onclick = () => approve([b.dataset.id], 'YES'));
   $('btnApproveAll').disabled = !waiting.length;
   $('btnApproveAll').onclick = () => approve(waiting.map(r => r.id), 'YES');
-  const stageName = { starter: 'Starter', gate: 'Waiting to start', main: 'Main activity', check: 'Waiting for check', plenary: 'Plenary', done: 'Completed' };
-  $('dTable').innerHTML = rows.slice().sort((a, b) => String(a.name).localeCompare(String(b.name))).map(r => `<tr><td>${esc(r.name)}</td><td>${esc(r.div)}</td><td>${stageName[r.stage] || esc(r.stage)}</td><td>${esc(r.pics)}</td><td>${r.accuracy === null || r.accuracy === '' ? '–' : r.accuracy + '%'}</td><td>${esc(r.starter)}/2</td><td>${r.plenary === '' || r.plenary == null ? '–' : r.plenary + '/2'}</td><td>${esc(r.points)}</td></tr>`).join('') || '<tr><td colspan="8" class="sub">No students yet.</td></tr>';
+  const stageName = STATUS_NAME;
+  $('dTable').innerHTML = rows.slice().sort((a, b) => String(a.name).localeCompare(String(b.name))).map(r => `<tr><td>${esc(r.name)}</td><td>${esc(r.div)}</td><td>${stageName[r.stage] || esc(r.stage)}</td><td>${r.starter === '' || r.starter == null ? '–' : esc(r.starter) + '/2'}</td><td>${r.accuracy === null || r.accuracy === '' ? '–' : r.accuracy + '%'}</td><td>${r.accuracy === null || r.accuracy === '' ? '–' : levelOf(r.accuracy).replace('Working ', '')}</td><td>${r.plenary === '' || r.plenary == null ? '–' : r.plenary + '/2'}</td><td>${esc(r.points)}</td></tr>`).join('') || '<tr><td colspan="8" class="sub">No students yet.</td></tr>';
   renderTab(rows, tested);
 }
 function approve(ids, value) {
   if (!ids.length) return;
+  const items = dRows.filter(r => ids.includes(r.id)).map(r => ({ id: r.id, date: r.date, cls: r.cls, div: r.div }));
   dRows.forEach(r => { if (ids.includes(r.id)) r.approved = value; });
   if (demo) { dRows.forEach(r => { if (ids.includes(r.id)) r.stage = value === 'MAIN' ? 'main' : 'plenary'; }); paintDash(); return; }
+  ids.forEach(id => pendingApr[id] = { v: value, t: Date.now() });
   paintDash();
-  fetch(SHEET_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'approve', ids, value }) })
-    .then(() => toast(value === 'MAIN' ? `Started Main Activity for ${ids.length} student${ids.length > 1 ? 's' : ''}` : `Approved ${ids.length} student${ids.length > 1 ? 's' : ''}`)).catch(() => toast('Could not reach Google Sheets'));
+  const msg = value === 'MAIN' ? `Started Main Activity for ${ids.length} student${ids.length > 1 ? 's' : ''}` : `Approved ${ids.length} student${ids.length > 1 ? 's' : ''}`;
+  const send = (n) => fetch(SHEET_URL, { method: 'POST', body: JSON.stringify({ action: 'approve', items, value }) }).then(r => r.json())
+    .then(d => { if (!d || !d.ok) throw 0; toast(msg); })
+    .catch(() => { if (n < 3) setTimeout(() => send(n + 1), 2000); else toast('Could not reach Google Sheets – please press the button again'); });
+  send(1);
 }
 
 /* --- results by activity (Curipod-style) --- */
@@ -884,7 +924,7 @@ function quizStats(rows, key, qs) {
   return { per, acc: tot ? Math.round(ok / tot * 100) : null, people: Math.max(0, ...per.map(x => x.total)) };
 }
 function hotsHtml(rows) {
-  const list = rows.map(r => ({ n: r.name, h: parseRJ(r).h })).filter(x => x.h);
+  const list = rows.map(r => ({ n: r.name, h: r.hots || parseRJ(r).h })).filter(x => x.h);
   return `<div class="qcard" style="margin-top:14px"><div class="qa">HOT Question · ${list.length} answer${list.length === 1 ? '' : 's'}</div>
     <h4>Your AI thinks a peace sign ✌️ is an open hand. What would you change in the training pictures to make it smarter?</h4>
     ${list.length ? list.map(x => `<p style="margin:8px 0;font-size:17px"><b>${esc(x.n)}:</b> ${esc(x.h)}</p>`).join('') : '<p class="sub">Answers appear here as students submit them.</p>'}</div>`;
